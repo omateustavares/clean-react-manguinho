@@ -1,4 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-misused-promises */
 import React, { useEffect, useState } from 'react'
+import { createMemoryHistory } from 'history'
 import {
   FormStatusBase,
   Input,
@@ -9,6 +12,7 @@ import Styles from './login-styles.scss'
 import Context from '@/presentation/contexts/form/form-context'
 import { Validation } from '@/presentation/protocols/validation'
 import { Authentication } from '@/domain/usecases'
+import { Link } from 'react-router-dom'
 
 type Props = {
   validation: Validation
@@ -16,6 +20,7 @@ type Props = {
 };
 
 const Login: React.FC<Props> = ({ validation, authentication }: Props) => {
+  const history = createMemoryHistory()
   const [state, setState] = useState({
     isLoading: false,
     mainError: '',
@@ -39,21 +44,31 @@ const Login: React.FC<Props> = ({ validation, authentication }: Props) => {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault()
+    try {
+      if (state.isLoading || state.emailError || state.passwordError) return
 
-    if (state.isLoading || state.emailError || state.passwordError) return
+      setState({ ...state, isLoading: true })
+      const account = await authentication.auth({
+        email: state.email,
+        password: state.password
+      })
 
-    setState({ ...state, isLoading: true })
-    await authentication.auth({
-      email: state.email,
-      password: state.password
-    })
+      localStorage.setItem('accessToken', account.accessToken)
+      history.replace('/')
+    } catch (error) {
+      setState({
+        ...state,
+        isLoading: false,
+        mainError: error.message
+      })
+    }
   }
 
   return (
     <div className={Styles.login}>
       <LoginHeader />
       <Context.Provider value={{ state, setState }}>
-        <form data-testId="form" className={Styles.form} onSubmit={handleSubmit}>
+        <form data-testid="form" className={Styles.form} onSubmit={handleSubmit}>
           <h2>Login</h2>
           <Input type="email" name="email" placeholder="Digite seu e-mail" />
           <Input
@@ -70,7 +85,7 @@ const Login: React.FC<Props> = ({ validation, authentication }: Props) => {
           >
             Entrar
           </button>
-          <span className={Styles.link}>Criar conta</span>
+          <Link data-testid="signup" to='/signup' className={Styles.link}>Criar conta</Link>
           <FormStatusBase />
         </form>
       </Context.Provider>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { AccountModel } from '@/domain/models'
 import { mockAccountModel } from '@/domain/test'
 import { Authentication, AuthenticationParams } from '@/domain/usecases'
